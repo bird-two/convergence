@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 import json
 
 
-def build_distribution(dtype='mnist', num_users=16, way='iid-b', alpha=10):
+def build_distribution(data_path='./datasets/in_use/', dtype='mnist', num_users=16, way='iid-b', alpha=10):
     r'''build distributions on training data. Allocate data idx to users(clients).
     Returns:
         net_dataidx_map (dict): {int: numpy.array*}, e.g. {0: [1,2,3], 1: [4,5,6]}
@@ -36,7 +36,7 @@ def build_distribution(dtype='mnist', num_users=16, way='iid-b', alpha=10):
         way (str): the way to generate the data distribution. 'iid-b', 'iid-u', 'dir-u', 'pat-u', 'pat2-b' are valid.
     '''
     partition, balance = way.split('-')
-    net_dataidx_map = DatasetDistributed.read_net_dataidx_map(data_path='./datasets/in_use/', dtype=dtype, partition=partition, balance=balance, n_nets=num_users, alpha=alpha)
+    net_dataidx_map = DatasetDistributed.read_net_dataidx_map(data_path=data_path, dtype=dtype, partition=partition, balance=balance, n_nets=num_users, alpha=alpha)
     return net_dataidx_map
 
 

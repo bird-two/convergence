@@ -85,7 +85,13 @@ def vgg11_bn_split(split, dtype, num_classes, **kwargs):
 if __name__ == '__main__':
     from pytorch_model_summary import summary
     from model_utils import count_parameters
-    model = vgg11(dtype='cifar100', num_classes=100)
-    count_parameters(model)
-    print(summary(model, torch.zeros((1, 3, 32, 32)), show_input=True)) # 1, 3, 32, 32
+    
+    model_client = vgg11_split(dtype='cifar10', num_classes=10, split=4)
+    model_server = vgg11_split(dtype='cifar10', num_classes=10, split=4)
+    #print(model_client)
+    print(model_client.model)
+    count_parameters(model_client.model)
+
+    #print(summary(model_client, torch.zeros((1, 3, 32, 32)), show_input=True)) # 1, 3, 32, 32
+    #print(summary(model_server, torch.zeros((1, 256, 4, 4)), show_input=True)) # 1, 256, 4, 4
 

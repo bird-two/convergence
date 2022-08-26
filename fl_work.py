@@ -1,5 +1,9 @@
 '''
-The implementation of Federated Learning[1].
+The implementation of Federated Learning[1]. 
+Here we average the weight after receiving the weight from any client immediately to save the memory.
+Class AverageAcrossClients is main modification.
+Some examples are shown below, which indicates that this modification makes running time longer with improvement of memory consumption.
+But the difference is a little, so we adopt the vanilla one. By the way, we find it bad that the first running task needs the least time.
 References:
 [1] McMahan B, Moore E, Ramage D, et al. Communication-efficient learning of deep networks from decentralized data[C]//Artificial intelligence and statistics. PMLR, 2017: 1273-1282.
 [2] https://github.com/chandra2thapa/SplitFed
@@ -16,7 +20,7 @@ import random
 import time
 import copy
 
-from utils.utils import AverageMeter, accuracy, average_weights
+from utils.utils import AverageMeter, accuracy, group_clients, average_weights
 from utils.outputs import record_tocsv, switchonlog, loginfo
 from datasets.datasets import build_dataset
 from datasets.distributions import SubDataset, build_distribution
@@ -49,7 +53,7 @@ parser.add_argument('-b', '--batch-size', default=50, type=int, metavar='N',
 parser.add_argument('--seed', default=1234, type=int, help='seed for initializing training. ')
 args = parser.parse_args()
 
-# python fl.py -a lenet5 -d mnist --epochs 50 --local-epochs 1 --clients 100 --distribution pat2-b --alpha 2 --optim sgd --lr 0.01 --momentum 0.9 --global-lr 1 --batch-size 10 
+#python fl.py -a lenet5 -d mnist --epochs 50 --local-epochs 1 --clients 100 --distribution pat2-b --alpha 2 --optim sgd --lr 0.01 --momentum 0.9 --global-lr 1 --batch-size 10 
 
 # hyperparameters
 rounds = args.epochs
@@ -67,8 +71,8 @@ if torch.cuda.is_available():
     #print(torch.cuda.get_device_name(0))
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-# collect server's loss and tops
 topacc = [1, 5]
+# collect server's loss and tops
 train_loss = []
 val_loss = []
 train_tops = [[] for _ in range(len(topacc))]
@@ -78,14 +82,14 @@ val_tops = [[] for _ in range(len(topacc))]
 def main():
     global args, topacc, device
     # log
-    switchonlog(getprojectname(args))
+    switchonlog('../convergence/save/', getprojectname(args))
     loginfo('args: {}\ndevice: {}'.format(args, device))
     
     # datasets and generate train local datasets
-    train_dataset, test_dataset = build_dataset(args.d)
+    train_dataset, test_dataset = build_dataset(args.d, data_path='../data/')
     
     train_loaders = []
-    localdataset_idxs_train = build_distribution(dtype=args.d, num_users=users, way=args.distribution, alpha=args.alpha)
+    localdataset_idxs_train = build_distribution('../convergence/datasets/in_use/', args.d, users, way=args.distribution, alpha=args.alpha)
     for i in range(users):
         train_loaders.append(DataLoader(SubDataset(train_dataset, localdataset_idxs_train[i]), batch_size=args.batch_size, shuffle=True))
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
@@ -108,20 +112,17 @@ def main():
     print("timmer start!")
 
     global_model.train()
-    #record_weight = AverageAcrossClients(global_model.state_dict())
-
+    record_weight = AverageAcrossClients(global_model.state_dict())
+    
     for r in range(rounds):
-        #record_weight.reset()
-        weight_list = []
+        record_weight.reset()
         for u in range(users):
             local_model = localupdate(args, train_loaders[u], model=copy.deepcopy(global_model), criterion=criterion, device=device)
-            #record_weight.update(local_model.state_dict(), datasetsize_client[u])
-            weight_list.append(local_model.state_dict())
-
-        average_weight = average_weights(weight_list, datasetsize_client)
+            record_weight.update(local_model.state_dict(), datasetsize_client[u])
         # global update, use `\eta_g` in the paper.
-        w_server = globalupdate(global_model.state_dict(), average_weight, args)
-        global_model.load_state_dict(w_server)
+        w_server = globalupdate(global_model.state_dict(), record_weight.average(), args)
+        global_model.load_state_dict(w_server)   
+        #global_model.load_state_dict(record_weight.average())
         
         # Train accuracy and loss check at each round (this is for the gloabl model -- not local model)
         inference(train_loaders, global_model, criterion, r)
@@ -236,17 +237,62 @@ def evaluate(val_loader, model, criterion, round):
             tops[0].update(acc1.item(), val_label.size(0))
             tops[1].update(acc5.item(), val_label.size(0))
         
-        loginfo("rounds {}'s server test  acc    : {:.2f}%, test  loss    : {:.4f}".format(round + 1, tops[0].avg, losses.avg), 'red')
+        loginfo("rounds {}'s server test acc: {:.2f}%, test loss: {:.4f}".format(round + 1, tops[0].avg, losses.avg), 'red')
         
         val_loss.append(losses.avg)
         for i in range(0, len(topacc)):
             val_tops[i].append(tops[i].avg)
-            
+
+
+class AverageAcrossClients():
+    r'''Average the weights across selected clients based on the weight (the first weight is the model parameters) on the fly,
+    which is different from the way collecting all the weights and averaging at last.'''
+    def __init__(self, initweights):
+        self.sum = copy.deepcopy(initweights)
+        self.reset()
+    
+    def reset(self):
+        for key in self.sum.keys():
+            # if we use "w[i][key] *= float(data)", when resnet parameters may have different type that is not float
+            self.sum[key].zero_()
+        self.sum_weight = torch.tensor(0)
+
+    def update(self, weights, weightclient):
+        r'''Since `weights` has been used for the model parameters, we use `weightclient` to denote the weight (for weighted average) of the client.
+        Record the sum of model parameters. Return the average parameters only when needed.
+        Args:
+            weights: the model parameters;
+            weightclient (int):
+        '''
+        weightclient = torch.tensor(weightclient)
+        self.weighted_sum(weights, weightclient)
+        self.sum_weight += weightclient
+    
+    def average(self):
+        r'''Return the average parameters only when needed.'''
+        avg = copy.deepcopy(self.sum)
+        
+        for key in avg.keys():
+            avg[key] = torch.div(self.sum[key], float(self.sum_weight))
+        return avg
+
+    def weighted_sum(self, weights, weightclient):
+        for key in weights.keys():
+            # if we use "w[i][key] *= float(data)", when resnet parameters may have different type that is not float
+            weights[key] *= weightclient.type_as(weights[key])
+            self.sum[key] += weights[key]
+        
+
+def AverageAcrossRounds():
+    r'''Average the weights across the all the rounds based on the weight (the first weight is the model parameters) on the fly.
+    We only use weights of the last round instead of averaging here.'''
+    pass
+
 
 def getprojectname(args):
     alg_setup = '{}'.format(args.alg)
     # distributed collaborative machine learning 
-    dcml_setup = '{}({} {} {})'.format('fl', args.clients, args.local_epochs, args.global_lr)
+    dcml_setup = '{}({} {} {})'.format('flv2', args.clients, args.local_epochs, args.global_lr)
     model_setup = '{}'.format(args.arch)
     # data distribution
     if args.distribution in ['iid-b', 'iid-u']:
@@ -274,7 +320,7 @@ def recorddata():
     projectname = getprojectname(args)
     
     # save the output data to .csv file (for comparision plots)   
-    record_tocsv(name='{}'.format(projectname),
+    record_tocsv(name='{}'.format(projectname), path='../convergence/save/', 
         train_loss=train_loss, val_loss=val_loss, train_top1=train_tops[0], val_top1=val_tops[0], 
         train_top5=train_tops[1], val_top5=val_tops[1])
 

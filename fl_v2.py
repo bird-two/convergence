@@ -3,7 +3,7 @@ The implementation of Federated Learning[1].
 Here we average the weight after receiving the weight from any client immediately to save the memory.
 Class AverageAcrossClients is main modification.
 Some examples are shown below, which indicates that this modification makes running time longer with improvement of memory consumption.
-But the difference is a little, so we adopt the vanilla one. By the way, we find it bad that the first running code needs the least time.
+But the difference is a little, so we adopt the vanilla one. By the way, we find it bad that the first running task needs the least time.
 References:
 [1] McMahan B, Moore E, Ramage D, et al. Communication-efficient learning of deep networks from decentralized data[C]//Artificial intelligence and statistics. PMLR, 2017: 1273-1282.
 [2] https://github.com/chandra2thapa/SplitFed
@@ -32,14 +32,14 @@ parser = argparse.ArgumentParser()
 model_names = ['lenet5', 'vgg11']
 alg_names = ['base']
 parser.add_argument('-a', '--arch', metavar='ARCH', default='vgg11', choices=model_names, help='model architecture: ' + ' | '.join(model_names) + ' (default: vgg11)')
-parser.add_argument('-d', default='cifar10', type=str, metavar='N', help='dataset')
+parser.add_argument('-d', default='cifar10', type=str, metavar='N', choices=['mnist', 'fashionmnist', 'cifar10', 'cifar100'], help='dataset')
 parser.add_argument('-s', default=1, type=int, metavar='N', help='split layer')
 parser.add_argument('--epochs', default=200, type=int, metavar='N', help='number of total epochs to run')
 parser.add_argument('--local-epochs', default=1, type=int, metavar='N', help='number of local epochs to run')
 parser.add_argument('--clients', default=100, type=int, metavar='N', help='number of total clients')
 parser.add_argument('--servers', default=1, type=int, metavar='N', help='number of total servers')
 parser.add_argument('--alg', default='base', type=str, choices=alg_names, metavar='N', help='the algorithm')
-parser.add_argument('--distribution', default='iid-b', type=str, metavar='N', choices=['dir-u', 'iid-b', 'pat2-b'], help='the data distribution')
+parser.add_argument('--distribution', default='iid-b', type=str, metavar='N', choices=['dir-u', 'iid-b', 'pat2-b'], help='way to sample')
 parser.add_argument('--alpha', default=10, type=float, metavar='N', help='the alpha of dirichlet distribution')
 parser.add_argument('--optim', default='sgd', type=str, choices=['sgd', 'adam'], metavar='N', help='the optimizer')
 parser.add_argument('--lr', default=0.0001, type=float, metavar='LR', help='initial learning rate of client')
@@ -53,7 +53,7 @@ parser.add_argument('-b', '--batch-size', default=50, type=int, metavar='N',
 parser.add_argument('--seed', default=1234, type=int, help='seed for initializing training. ')
 args = parser.parse_args()
 
-# python fl.py -a lenet5 -d mnist --epochs 50 --local-epochs 1 --clients 100 --distribution pat2-b --alpha 2 --optim sgd --lr 0.01 --momentum 0 --global-lr 1 --batch-size 50 
+#python fl.py -a lenet5 -d mnist --epochs 50 --local-epochs 1 --clients 100 --distribution pat2-b --alpha 2 --optim sgd --lr 0.01 --momentum 0.9 --global-lr 1 --batch-size 10 
 
 # hyperparameters
 rounds = args.epochs
@@ -119,8 +119,10 @@ def main():
         for u in range(users):
             local_model = localupdate(args, train_loaders[u], model=copy.deepcopy(global_model), criterion=criterion, device=device)
             record_weight.update(local_model.state_dict(), datasetsize_client[u])
-            
-        global_model.load_state_dict(record_weight.average())
+        # global update, use `\eta_g` in the paper.
+        w_server = globalupdate(global_model.state_dict(), record_weight.average(), args)
+        global_model.load_state_dict(w_server)   
+        #global_model.load_state_dict(record_weight.average())
         
         # Train accuracy and loss check at each round (this is for the gloabl model -- not local model)
         inference(train_loaders, global_model, criterion, r)
@@ -156,6 +158,21 @@ def localupdate(args, train_loader, model, criterion, device):
             loss.backward()
             optimizer.step()
     return model
+
+
+def globalupdate(w_server, round_weight, args):
+    r'''Update the global model with the round model and `eta_g` (see algorithm in our paper).
+    Two conditions are adopted here, because if using the second, true but different result will be gotten (maybe caused by float caculation of computer).'''
+    global_lr = torch.tensor(args.global_lr)
+    if global_lr == 1.0: # Although float, "==" is ok.
+        # update the global model
+        for key in w_server.keys():
+            w_server[key] = round_weight[key]
+    else:
+        for key in w_server.keys():
+            w_server[key] = w_server[key] + global_lr*(round_weight[key]-w_server[key])
+
+    return w_server
 
 
 def inference(train_loaders, model, criterion, round):
@@ -274,10 +291,10 @@ def AverageAcrossRounds():
 
 def getprojectname(args):
     alg_setup = '{}'.format(args.alg)
-    # this distribution is for split learning algorithm and clients-servers distribution
-    dcml_setup = '{}({} {})'.format('fl2', args.clients, args.local_epochs)
+    # distributed collaborative machine learning 
+    dcml_setup = '{}({} {} {})'.format('flv2', args.clients, args.local_epochs, args.global_lr)
     model_setup = '{}'.format(args.arch)
-    # data partition or data distribution
+    # data distribution
     if args.distribution in ['iid-b', 'iid-u']:
         dtype_setup = '{}({})'.format(args.d, args.distribution)
     elif args.distribution in ['dir-u', 'pat-u', 'pat2-b']:
@@ -288,11 +305,11 @@ def getprojectname(args):
     if args.optim == 'sgd':
         optim_setup = '{}({} {} {})'.format(args.optim, args.lr, args.momentum, args.weight_decay)
     elif args.optim == 'adam':
-        optim_setup = '{}({} {})'.format(args.optim, args.args.lr, args.weight_decay)
+        optim_setup = '{}({} {})'.format(args.optim, args.lr, args.weight_decay)
     else:
         raise ValueError
     
-    hp_setup = 'hp({} {})'.format(args.global_lr, args.batch_size)
+    hp_setup = 'hp({})'.format(args.batch_size)
 
     return '{} {} {} {} {} {}'.format(alg_setup, dcml_setup, model_setup, dtype_setup, optim_setup, hp_setup)
 
@@ -303,7 +320,7 @@ def recorddata():
     projectname = getprojectname(args)
     
     # save the output data to .csv file (for comparision plots)   
-    record_tocsv(name='{} server'.format(projectname),
+    record_tocsv(name='{}'.format(projectname),
         train_loss=train_loss, val_loss=val_loss, train_top1=train_tops[0], val_top1=val_tops[0], 
         train_top5=train_tops[1], val_top5=val_tops[1])
 

@@ -17,15 +17,43 @@ def resolvefilename(filename = 'gld(0.5 u-50-200 1-1) splitfed(1 16 1) vgg11(1) 
     a = re.findall(pattern, filename)
     return a
 
-capsule = {}
+mnist_capsule = {
+            'alg'  : ['base'],
+            'dcml' : [],
+            'model': [],
+            'dtype': ['mnist(iid-b)', 'mnist(pat2-b 1.0)', 'mnist(pat2-b 2.0)', 'mnist(pat2-b 5.0)'],
+            'optim': ['sgd(0.01 0.9 0.0001)'],
+            'hp'   : ['hp(10)']
+        }
+fashion_capsule = {
+            'alg'  : ['base'],
+            'dcml' : [],
+            'model': [],
+            'dtype': ['fashionmnist(iid-b)', 'fashionmnist(pat2-b 1.0)', 'fashionmnist(pat2-b 2.0)', 'fashionmnist(pat2-b 5.0)'],
+            'optim': ['sgd(0.01 0.9 0.0001)'],
+            'hp'   : ['hp(10)']
+        }
+cifar10_capsule = {
+            'alg'  : ['base'],
+            'dcml' : [],
+            'model': [],
+            'dtype': ['cifar10(iid-b)', 'cifar10(pat2-b 1.0)', 'cifar10(pat2-b 2.0)', 'cifar10(pat2-b 5.0)'],
+            'optim': ['sgd(0.005 0.9 0.0001)'],
+            'hp'   : ['hp(10)']
+        }
 
 class FileNameCurve():
     '''select the files as the curves'''
     def __init__(self, capsule={}):
-        pass
+        self.capsule = capsule
 
-    def get_title(self):
-        title = 'MNIST, 100 clients'
+    def get_title(self, dataset):
+        if dataset == 'mnist':
+            title = 'MNIST, 100 clients'
+        elif dataset == 'fashionmnist':
+            title = 'FashionMNIST, 100 clients'
+        elif dataset == 'cifar10':
+            title = 'CIFAR10, 100 clients'
         return title
     
     def get_ylabel(self, t=0):
@@ -50,7 +78,7 @@ class FileNameCurve():
         fl_items = {
             'alg'  : [],
             'dcml' : ['fl(100 1 1.0)'],
-            'model': ['lenet5'],
+            'model': ['lenet5'], #lenet5(2)
             'dtype': [],
             'optim': [],
             'hp'   : []
@@ -128,8 +156,9 @@ class Xaxis():
 parser = argparse.ArgumentParser()
 parser.add_argument('-t', type=int, default=0, help='test accuracy or train loss')
 parser.add_argument('-x', type=str, default=0, choices=['round', 'iteration', 'amount'], help='X-axis')
+parser.add_argument('-f', type=int, default=0, help='Use FL or not')
 parser.add_argument('-s', type=int, default=1, help='start epoch')
-parser.add_argument('-e', type=int, default=300, help='end epoch')
+parser.add_argument('-e', type=int, default=400, help='end epoch')
 #parser.add_argument('--time', type=int, default=0, help='x-axis is time ?')
 #parser.add_argument('-f', type=str, nargs='*', default='', help='folder')
 #parser.add_argument('--choose', type=str, nargs='*', default=[], help='chooses')
@@ -138,34 +167,13 @@ args = parser.parse_args()
 print(args)
 
 
-def getmarker(self, file):
-    marker = ['^', 'v', 's', 'o', 'D', 'x', '.', '*', '+', 'd']
-    temp = resolvefilename(file)
-    if temp[0] == 'base':
-        return 's'
-    elif temp[0] == 'glocal':
-        return 'x'
-    elif temp[0] == 'gdelay':
-        return '^'
-    elif temp[0] == 'replay' or temp[0] == 'grey':
-        return 'd'
-    elif 'gld' in temp[0]:
-        return 'v'
-    else:
-        return '.'
-
-def getcolor(i):
-    color = ['xkcd:red', 'xkcd:blue', 'xkcd:green', 'xkcd:orange', 'xkcd:brown', 'xkcd:violet', 'xkcd:grey', 'xkcd:cyan', 'xkcd:pink']
-    return color[i]
-    
-
 def plotcurve(args):
     #mpl.style.use('seaborn')
-
-    path = '../save/'
+    dataset = 'mnist' # mnist, cifar10
+    path = '../save/SL and FL/{}/'.format(dataset)
 
     fncurve = FileNameCurve()
-    title = fncurve.get_title()
+    title = fncurve.get_title(dataset)
     ylabel = fncurve.get_ylabel(args.t)
     
     x_axis = Xaxis()
@@ -180,12 +188,14 @@ def plotcurve(args):
     start_epoch = args.s # 1
     #epochs = range(start_epoch, end_epoch+1)
     lines = []
-    for i in range(len(fl_files)):
-        df = read_fromcsv(fl_files[i], path)
-        end_epoch = min(args.e, len(df))
-        x_axis = range(1, end_epoch+1)
-        plt.plot(x_axis, df.iloc[start_epoch-1:end_epoch, args.t].values, linestyle='dashed', color=None, lw=2)
-        lines.append('{}'.format(fl_legend[i]))
+    if args.f == 1:
+        for i in range(len(fl_files)):
+            #print(fl_files[i])
+            df = read_fromcsv(fl_files[i], path)
+            end_epoch = min(args.e, len(df))
+            x_axis = range(1, end_epoch+1)
+            plt.plot(x_axis, df.iloc[start_epoch-1:end_epoch, args.t].values, linestyle='dashed', color=None, lw=2)
+            lines.append('{}'.format(fl_legend[i]))
     
     for i in range(len(sl_files)):
         df = read_fromcsv(sl_files[i], path)
@@ -196,7 +206,9 @@ def plotcurve(args):
             
     plt.ylabel(ylabel, fontsize=12)
     plt.xlabel(xlabel, fontsize=12)
-    plt.legend(lines, loc=None, ncol=2, prop={'size': 12}) # loc = 1 or 4
+    plt.ylim(ymin=0, ymax=3)
+    ncol = 2 if args.f == 1 else 1
+    plt.legend(lines, loc=None, ncol= ncol, prop={'size': 12}) # loc = 1 or 4
     plt.grid()
     #plt.savefig('{}/{} {}.png'.format(pathplus[0], title, ylabel))
     plt.savefig('{}/{} {}.pdf'.format(path, title, ylabel), bbox_inches='tight')

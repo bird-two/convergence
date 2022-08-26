@@ -8,9 +8,8 @@ def prRed(skk):
 def prGreen(skk):
     print("\033[92m{}\033[00m" .format(skk))  
 
-def switchonlog(logname:str=''):
+def switchonlog(path='./save/', logname:str=''):
     r'''set log configuration'''
-    path = './save/'
     filepath = path+'{}.log'.format(logname)
     if (os.path.exists(filepath)):
         os.remove(filepath)
@@ -26,8 +25,7 @@ def loginfo(info:str='', color:str='white'):
         print(info)
     logging.info(info)
 
-def record_tocsv(name, **kwargs):
-    path = './save/'
+def record_tocsv(name, path='./save/', **kwargs):
     epoch = [i for i in range(1, len(kwargs[list(kwargs.keys())[0]])+1)]
     df = pd.DataFrame(kwargs)     
     file_name = path + name + ".csv"    

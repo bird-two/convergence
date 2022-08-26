@@ -1,6 +1,10 @@
 '''
-Data preprocessing. MNIST's is from [1]. FashionMNIST is from [5], [6]. 
-CIFAR10's is from [2], [3]. CIFAR100's from [4], but we don not do `cutout`. Reference [5] is also helpful.
+Data preprocessing. 
+MNIST        [1]
+FashionMNIST [5, 6]
+CIFAR10      [2, 3]
+CIFAR100     [4] (but we don not do `cutout`)
+Reference [5] is also helpful.
 References:
 [1] https://github.com/AshwinRJ/Federated-Learning-PyTorch/blob/master/src/utils.py
 [2] https://github.com/JYWa/FedNova/blob/master/util_v4.py
@@ -37,7 +41,7 @@ def dataset_mnist(data_path):
 
 def dataset_fashionmnist(data_path):
     #bd2 mean and std are generated manually
-    # https://www.freesion.com/article/77151167393/
+    # https://blog.csdn.net/wa1tzy/article/details/106697074
     # 2022 08 17
     transform_train = transforms.Compose([
                         transforms.Resize(28),

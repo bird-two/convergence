@@ -133,6 +133,6 @@ def vgg19_bn(**kwargs: Any) -> VGG:
 if __name__ == '__main__':
     from pytorch_model_summary import summary
     from model_utils import count_parameters
-    model = vgg11(dtype='cifar100', num_classes=100)
+    model = vgg11(dtype='cifar10', num_classes=10)
     count_parameters(model)
     print(summary(model, torch.zeros((1, 3, 32, 32)), show_input=True)) # 1, 3, 32, 32
