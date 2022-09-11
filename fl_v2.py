@@ -89,7 +89,7 @@ def main():
     train_dataset, test_dataset = build_dataset(args.d)
     
     train_loaders = []
-    localdataset_idxs_train = build_distribution(args.d, users, way=args.distribution, alpha=args.alpha)
+    localdataset_idxs_train = build_distribution(dtype=args.d, num_users=users, way=args.distribution, alpha=args.alpha)
     for i in range(users):
         train_loaders.append(DataLoader(SubDataset(train_dataset, localdataset_idxs_train[i]), batch_size=args.batch_size, shuffle=True))
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)

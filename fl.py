@@ -78,7 +78,7 @@ val_tops = [[] for _ in range(len(topacc))]
 def main():
     global args, topacc, device
     # log
-    switchonlog(getprojectname(args))
+    switchonlog(logname=getprojectname(args))
     loginfo('args: {}\ndevice: {}'.format(args, device))
     
     # datasets and generate train local datasets

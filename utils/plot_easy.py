@@ -39,7 +39,7 @@ class Xaxis():
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-t', type=int, default=0, help='test accuracy or train loss')
-parser.add_argument('-x', type=str, default=0, choices=['round', 'iteration', 'amount'], help='X-axis')
+parser.add_argument('-x', type=str, default='round', choices=['round', 'iteration', 'amount'], help='X-axis')
 parser.add_argument('-r', type=int, default=0, help='all the raw files or not')
 parser.add_argument('-s', type=int, default=1, help='start epoch')
 parser.add_argument('-e', type=int, default=400, help='end epoch')
@@ -54,7 +54,8 @@ print(args)
 def plotcurve(args):
     #mpl.style.use('seaborn')
 
-    path = 'D:\\study\\birds\\Convegence Analysis of SL and FL\\EXP\\save\\Global learning rate\\'
+    #path = 'D:\\study\\birds\\Convegence Analysis of SL and FL\\EXP\\save\\Global learning rate\\cifar10\\'
+    path = 'D:\\study\\birds\\Convegence Analysis of SL and FL\\EXP\\save\\cmp_lr\\fashionmnist\\'
     #path = 'D:\\download\\'
 
     fncurve = FileNameCurve()
@@ -69,16 +70,18 @@ def plotcurve(args):
         files = raw_files
     else:
         #files = ['base flv2(100 1 1.0) vgg11 cifar10(iid-b) sgd(0.0001 0.9 0.0001) hp(10)','base flv2(100 1 1.0) vgg11 cifar10(iid-b) sgd(0.01 0.9 0.0001) hp(10)','base flv2(100 1 1.0) vgg11 cifar10(iid-b) sgd(0.001 0.9 0.0001) hp(10)'] # please write the files by yourself.
-        files = ['base sl(100 1 0.1) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
-                 'base sl(100 1 1.0) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
-                 'base sl(100 1 1.5) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
-                 'base sl(100 1 2.0) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
-                 'base sl(100 1 5.0) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
-                 'base sl(100 1 10.0) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
-                 #'base sl(100 1 1.0) vgg11(4) cifar10(iid-b) sgd(0.0001 0.9 0.0001) hp(10)',
-                 #'base sl(100 1 1.0) vgg11(4) cifar10(iid-b) sgd(0.001 0.9 0.0001) hp(10)',
-                 #'base sl(100 1 1.0) vgg11(4) cifar10(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
-                 #'base sl(100 1 1.0) vgg11(4) cifar10(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
+        files = [#'base sl(100 1 0.1) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
+                 #'base sl(100 1 1.0) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
+                 #'base sl(100 1 1.5) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
+                 #'base sl(100 1 2.0) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
+                 #'base sl(10 1 1.0) lenet5(2) fashionmnist(pat2-b 1.0) sgd(5e-05 0.9 0.0001) hp(10)',
+                 #'base fl(10 1 1.0) lenet5 fashionmnist(pat2-b 1.0) sgd(5e-05 0.9 0.0001) hp(10)',
+                 'base sl(10 1 1.0) lenet5(2) fashionmnist(pat2-b 1.0) sgd(0.0001 0.9 0.0001) hp(10)',
+                 'base fl(10 1 1.0) lenet5 fashionmnist(pat2-b 1.0) sgd(0.0001 0.9 0.0001) hp(10)',
+                 'base sl(10 1 1.0) lenet5(2) fashionmnist(pat2-b 1.0) sgd(0.0005 0.9 0.0001) hp(10)',
+                 'base fl(10 1 1.0) lenet5 fashionmnist(pat2-b 1.0) sgd(0.0005 0.9 0.0001) hp(10)',
+                 'base sl(10 1 1.0) lenet5(2) fashionmnist(pat2-b 1.0) sgd(0.001 0.9 0.0001) hp(10)',
+                 'base fl(10 1 1.0) lenet5 fashionmnist(pat2-b 1.0) sgd(0.001 0.9 0.0001) hp(10)',
                  #'base sl(100 1 1.0) vgg11(4) cifar10(iid-b) sgd(0.005 0.9 0.0001) hp(10)',
                  #'base sl(100 1 1.0) vgg11(4) cifar10(pat2-b 5.0) sgd(0.005 0.9 0.0001) hp(10)',
                  #'base sl(100 1 1.0) vgg11(4) cifar10(iid-b) sgd(0.01 0.9 0.0001) hp(10)',

@@ -1,3 +1,7 @@
+'''
+Plot FL and SL
+SIZE: title=15, legend=14, label=14, ticks=12
+'''
 from msilib.schema import Error
 import os
 import re
@@ -8,15 +12,6 @@ import argparse
 
 from outputs import read_fromcsv
 
-def resolvefilename(filename = 'gld(0.5 u-50-200 1-1) splitfed(1 16 1) vgg11(1) cifar10(iid) hp(0.0001 0.0001 32) server'):
-    r'''resolve the file name to get the related information.
-    Examples:
-        ['gld(0.5 u-50-200 1-1)', 'splitfed(1 16 1)', 'vgg11(1)', 'cifar10(iid)', 'hp(0.0001 0.0001 32)', 'server']
-    '''
-    pattern = r'[\+\w-]+(?:\([\w \-\.]+\))*'
-    a = re.findall(pattern, filename)
-    return a
-
 mnist_capsule = {
             'alg'  : ['base'],
             'dcml' : [],
@@ -25,14 +20,15 @@ mnist_capsule = {
             'optim': ['sgd(0.01 0.9 0.0001)'],
             'hp'   : ['hp(10)']
         }
-fashion_capsule = {
-            'alg'  : ['base'],
-            'dcml' : [],
-            'model': [],
-            'dtype': ['fashionmnist(iid-b)', 'fashionmnist(pat2-b 1.0)', 'fashionmnist(pat2-b 2.0)', 'fashionmnist(pat2-b 5.0)'],
-            'optim': ['sgd(0.01 0.9 0.0001)'],
-            'hp'   : ['hp(10)']
-        }
+# llr = 0.01
+# fashion_capsule = {
+#             'alg'  : ['base'],
+#             'dcml' : [],
+#             'model': [],
+#             'dtype': ['fashionmnist(iid-b)', 'fashionmnist(pat2-b 1.0)', 'fashionmnist(pat2-b 2.0)', 'fashionmnist(pat2-b 5.0)'],
+#             'optim': ['sgd({} 0.9 0.0001)'.format(self.llr)],
+#             'hp'   : ['hp(10)']
+#         }
 cifar10_capsule = {
             'alg'  : ['base'],
             'dcml' : [],
@@ -44,16 +40,19 @@ cifar10_capsule = {
 
 class FileNameCurve():
     '''select the files as the curves'''
-    def __init__(self, capsule={}):
+    def __init__(self, args, capsule={}):
+        self.args = args
         self.capsule = capsule
 
-    def get_title(self, dataset):
+    def get_title(self, dataset, num_clients, llr):
+        self.num_clients = num_clients
+        self.llr = llr
         if dataset == 'mnist':
-            title = 'MNIST, 100 clients'
+            title = 'MNIST, {} clients'.format(num_clients)
         elif dataset == 'fashionmnist':
-            title = 'FashionMNIST, 100 clients'
+            title = 'FashionMNIST, {} clients'.format(num_clients)
         elif dataset == 'cifar10':
-            title = 'CIFAR10, 100 clients'
+            title = 'CIFAR10, {} clients'.format(num_clients)
         return title
     
     def get_ylabel(self, t=0):
@@ -65,33 +64,42 @@ class FileNameCurve():
         return raw_files
 
     def select_files(self, raw_files):
-        # base fl(100 1 1.0) lenet5 mnist(pat2-b 5.0) sgd(0.01 0.9 0.0001) hp(1.0 10)
-        # (alg_setup, dcml_setup, model_setup, dtype_setup, optim_setup, hp_setup)
         shared_items = {
             'alg'  : ['base'],
             'dcml' : [],
             'model': [],
-            'dtype': ['mnist(iid-b)', 'mnist(pat2-b 1.0)', 'mnist(pat2-b 2.0)', 'mnist(pat2-b 5.0)'],
-            'optim': ['sgd(0.01 0.9 0.0001)'],
+            'dtype': ['cifar10(iid-b)', 'cifar10(pat2-b 1.0)', 'cifar10(pat2-b 2.0)', 'cifar10(pat2-b 5.0)', 'cifar10(pat2-b 8.0)'],
+            'optim': ['sgd({} 0.9 0.0001)'.format(self.llr)],
+            'hp'   : ['hp(10)']
+        }
+        fl_other_items = {
+            'alg'  : ['base'],
+            'dcml' : [],
+            'model': [],
+            'dtype': ['cifar10(iid-b)', 'cifar10(pat2-b 1.0)', 'cifar10(pat2-b 2.0)', 'cifar10(pat2-b 5.0)', 'cifar10(pat2-b 8.0)'],
+            'optim': ['sgd(0.1 0.9 0.0001)'],
             'hp'   : ['hp(10)']
         }
         fl_items = {
             'alg'  : [],
-            'dcml' : ['fl(100 1 1.0)'],
-            'model': ['lenet5'], #lenet5(2)
+            'dcml' : ['flv2({} 1 1.0)'.format(self.num_clients)],
+            'model': ['vgg11'], 
             'dtype': [],
             'optim': [],
             'hp'   : []
         }
         sl_items = {
             'alg'  : [],
-            'dcml' : ['sl(100 1 1.0)'],
-            'model': ['lenet5(2)'],
+            'dcml' : ['sl({} 1 1.0)'.format(self.num_clients)],
+            'model': ['vgg11(4)'],#lenet5(2)
             'dtype': [],
             'optim': [],
             'hp'   : []
         }
         fl_names = self.assemble_curve_name(shared_items, fl_items)
+        if self.args.o != None:
+            fl_other_names = self.assemble_curve_name(fl_other_items, fl_items)
+            fl_names= fl_names+fl_other_names
         sl_names = self.assemble_curve_name(shared_items, sl_items)
         
         fl_exist = []
@@ -139,7 +147,11 @@ class FileNameCurve():
     
     def get_legend(self):
         fl_legend = ['FL(iid)', 'FL(1)', 'FL(2)', 'FL(5)']
+        #fl_legend = ['FL(iid)', 'FL(1)', 'FL(2)', 'FL(5)', 'FL(8)']
+        fl_other_legend = ['FL(iid)-', 'FL(1)-', 'FL(2)-', 'FL(5)-']
+        fl_legend = fl_legend + fl_other_legend
         sl_legend = ['SL(iid)', 'SL(1)', 'SL(2)', 'SL(5)']
+        #sl_legend = ['SL(iid)', 'SL(1)', 'SL(2)', 'SL(5)', 'SL(8)']
         return fl_legend, sl_legend
 
 
@@ -157,23 +169,27 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-t', type=int, default=0, help='test accuracy or train loss')
 parser.add_argument('-x', type=str, default=0, choices=['round', 'iteration', 'amount'], help='X-axis')
 parser.add_argument('-f', type=int, default=0, help='Use FL or not')
+parser.add_argument('--sl', type=int, default=0, help='Use SL or not')
 parser.add_argument('-s', type=int, default=1, help='start epoch')
 parser.add_argument('-e', type=int, default=400, help='end epoch')
+parser.add_argument('-o', type=int, default=None, help='others')
 #parser.add_argument('--time', type=int, default=0, help='x-axis is time ?')
 #parser.add_argument('-f', type=str, nargs='*', default='', help='folder')
 #parser.add_argument('--choose', type=str, nargs='*', default=[], help='chooses')
 #parser.add_argument('--ban', type=str, nargs='*', default=[], help='ban')
 args = parser.parse_args()
 print(args)
-
+# python plot_cp.py -x "round" -t 3 -f 1 -e 100
 
 def plotcurve(args):
     #mpl.style.use('seaborn')
-    dataset = 'mnist' # mnist, cifar10
+    dataset = 'cifar10' # mnist, cifar10
+    num_clients = 1000
+    llr = 0.005
     path = '../save/SL and FL/{}/'.format(dataset)
 
-    fncurve = FileNameCurve()
-    title = fncurve.get_title(dataset)
+    fncurve = FileNameCurve(args=args)
+    title = fncurve.get_title(dataset, num_clients, llr)
     ylabel = fncurve.get_ylabel(args.t)
     
     x_axis = Xaxis()
@@ -184,7 +200,6 @@ def plotcurve(args):
     fl_legend, sl_legend = fncurve.get_legend()
 
     plt.figure()
-    plt.title(title, fontsize=12)
     start_epoch = args.s # 1
     #epochs = range(start_epoch, end_epoch+1)
     lines = []
@@ -197,18 +212,22 @@ def plotcurve(args):
             plt.plot(x_axis, df.iloc[start_epoch-1:end_epoch, args.t].values, linestyle='dashed', color=None, lw=2)
             lines.append('{}'.format(fl_legend[i]))
     
-    for i in range(len(sl_files)):
-        df = read_fromcsv(sl_files[i], path)
-        end_epoch = min(args.e, len(df))
-        x_axis = range(1, end_epoch+1)
-        plt.plot(x_axis, df.iloc[start_epoch-1:end_epoch, args.t].values, color=None, lw=2)
-        lines.append('{}'.format(sl_legend[i]))
-            
-    plt.ylabel(ylabel, fontsize=12)
-    plt.xlabel(xlabel, fontsize=12)
-    plt.ylim(ymin=0, ymax=3)
-    ncol = 2 if args.f == 1 else 1
-    plt.legend(lines, loc=None, ncol= ncol, prop={'size': 12}) # loc = 1 or 4
+    if args.sl == 1:
+        for i in range(len(sl_files)):
+            df = read_fromcsv(sl_files[i], path)
+            end_epoch = min(args.e, len(df))
+            x_axis = range(1, end_epoch+1)
+            plt.plot(x_axis, df.iloc[start_epoch-1:end_epoch, args.t].values, color=None, lw=2)
+            lines.append('{}'.format(sl_legend[i]))
+    
+    plt.title(title, fontsize=15)        
+    plt.ylabel(ylabel, fontsize=14)
+    plt.xlabel(xlabel, fontsize=14)
+    #plt.ylim(ymin=0, ymax=3.5)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    ncol = 2 if args.f == 1 and args.sl == 1 else 1
+    plt.legend(lines, loc=None, ncol= ncol, prop={'size': 14}) # loc = 1 or 4
     plt.grid()
     #plt.savefig('{}/{} {}.png'.format(pathplus[0], title, ylabel))
     plt.savefig('{}/{} {}.pdf'.format(path, title, ylabel), bbox_inches='tight')

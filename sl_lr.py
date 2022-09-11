@@ -301,7 +301,7 @@ def getprojectname(args):
     if args.optim == 'sgd':
         optim_setup = '{}({} {} {})'.format(args.optim, args.lr, args.momentum, args.weight_decay)
     elif args.optim == 'adam':
-        optim_setup = '{}({} {})'.format(args.optim, args.lr, args.weight_decay)
+        optim_setup = '{}({} {})'.format(args.optim, args.args.lr, args.weight_decay)
     else:
         raise ValueError
     
