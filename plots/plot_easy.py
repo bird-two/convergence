@@ -55,7 +55,7 @@ def plotcurve(args):
     #mpl.style.use('seaborn')
 
     #path = 'D:\\study\\birds\\Convegence Analysis of SL and FL\\EXP\\save\\Global learning rate\\cifar10\\'
-    path = 'D:\\study\\birds\\Convegence Analysis of SL and FL\\EXP\\save\\cmp_lr\\fashionmnist\\'
+    path = 'D:\\study\\birds\\Convegence Analysis of SL and FL\\EXP\\save\\findings\\cifar10\\'
     #path = 'D:\\download\\'
 
     fncurve = FileNameCurve()
@@ -76,14 +76,20 @@ def plotcurve(args):
                  #'base sl(100 1 2.0) lenet5(2) mnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
                  #'base sl(10 1 1.0) lenet5(2) fashionmnist(pat2-b 1.0) sgd(5e-05 0.9 0.0001) hp(10)',
                  #'base fl(10 1 1.0) lenet5 fashionmnist(pat2-b 1.0) sgd(5e-05 0.9 0.0001) hp(10)',
-                 'base sl(10 1 1.0) lenet5(2) fashionmnist(pat2-b 1.0) sgd(0.0001 0.9 0.0001) hp(10)',
-                 'base fl(10 1 1.0) lenet5 fashionmnist(pat2-b 1.0) sgd(0.0001 0.9 0.0001) hp(10)',
-                 'base sl(10 1 1.0) lenet5(2) fashionmnist(pat2-b 1.0) sgd(0.0005 0.9 0.0001) hp(10)',
-                 'base fl(10 1 1.0) lenet5 fashionmnist(pat2-b 1.0) sgd(0.0005 0.9 0.0001) hp(10)',
-                 'base sl(10 1 1.0) lenet5(2) fashionmnist(pat2-b 1.0) sgd(0.001 0.9 0.0001) hp(10)',
-                 'base fl(10 1 1.0) lenet5 fashionmnist(pat2-b 1.0) sgd(0.001 0.9 0.0001) hp(10)',
-                 #'base sl(100 1 1.0) vgg11(4) cifar10(iid-b) sgd(0.005 0.9 0.0001) hp(10)',
-                 #'base sl(100 1 1.0) vgg11(4) cifar10(pat2-b 5.0) sgd(0.005 0.9 0.0001) hp(10)',
+                #  'base sl(10 1 1.0) lenet5(2) fashionmnist(pat2-b 8.0) sgd(0.001 0.9 0.0001) hp(10)',
+                #  'base sl(10 1 1.0) lenet5(2) fashionmnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
+                 #'base sl(10 0.1 1.0) lenet5(2) fashionmnist(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(10)',
+                 #'base sl(10 0.1 1.0) lenet5(2) fashionmnist(pat2-b 8.0) sgd(0.001 0.9 0.0001) hp(10)',
+                 #'base sl(10 1 1.0) vgg11(4) cifar10(pat2-b 8.0) sgd(0.005 0.9 0.0001) hp(100)',
+                 #'base sl(10 0.1 1.0) vgg11(4) cifar10(pat2-b 8.0) sgd(0.005 0.9 0.0001) hp(100)',
+                 'base sl(10 0.1 1.0) vgg11(4) cifar10(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(100)',
+                 #'base sl(10 0.1 1.0) vgg11(4) cifar10(pat2-b 2.0) sgd(0.001 0.9 0.0001) hp(100)',
+                 #'base sl(10 1 1.0) vgg11(4) cifar10(pat2-b 8.0) sgd(0.005 0.9 0.0001) hp(100)',
+                 'base sl(10 1 1.0) vgg11(4) cifar10(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(100)',
+                 #'base sl(10 1 1.0) vgg11(4) cifar10(pat2-b 2.0) sgd(0.001 0.9 0.0001) hp(100)',
+                 #'base sl(10 0.01 1.0) vgg11(4) cifar10(pat2-b 8.0) sgd(0.005 0.9 0.0001) hp(100)',
+                 'base sl(10 0.01 1.0) vgg11(4) cifar10(pat2-b 5.0) sgd(0.001 0.9 0.0001) hp(100)',
+                 #'base sl(10 0.01 1.0) vgg11(4) cifar10(pat2-b 2.0) sgd(0.001 0.9 0.0001) hp(100)',
                  #'base sl(100 1 1.0) vgg11(4) cifar10(iid-b) sgd(0.01 0.9 0.0001) hp(10)',
                  #'base sl(100 1 1.0) vgg11(4) cifar10(iid-b) sgd(0.01 0.9 0.0001) hp(10)',
                  #'base flv2(100 1 1.0) vgg11 cifar10(iid-b) sgd(0.0001 0.9 0.0001) hp(10)',

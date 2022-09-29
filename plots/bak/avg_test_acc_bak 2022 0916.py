@@ -18,20 +18,16 @@ mnist_temps = [
     'base fl({} 1 1.0) lenet5 {}(pat2-b 1.0) {}{} hp({})', 'base sl({} 1 1.0) lenet5(2) {}(pat2-b 1.0) {}{} hp({})',]
 
 cifar10_temps = [
-    'base flv2({} 1 1.0) vgg11 {}(iid-b) {}({} 0.9 0.0001) hp({})',      'base sl({} 1 1.0) vgg11(4) {}(iid-b) {}({} 0.9 0.0001) hp({})',
-    'base flv2({} 1 1.0) vgg11 {}(pat2-b 5.0) {}({} 0.9 0.0001) hp({})', 'base sl({} 1 1.0) vgg11(4) {}(pat2-b 5.0) {}({} 0.9 0.0001) hp({})',
-    'base flv2({} 1 1.0) vgg11 {}(pat2-b 2.0) {}({} 0.9 0.0001) hp({})', 'base sl({} 1 1.0) vgg11(4) {}(pat2-b 2.0) {}({} 0.9 0.0001) hp({})',
-    'base flv2({} 1 1.0) vgg11 {}(pat2-b 1.0) {}({} 0.9 0.0001) hp({})', 'base sl({} 1 1.0) vgg11(4) {}(pat2-b 1.0) {}({} 0.9 0.0001) hp({})',]
+    'base flv2({} 1 1.0) vgg11 {}(iid-b) {}{} hp({})',      'base sl({} 1 1.0) vgg11(4) {}(iid-b) {}{} hp({})',
+    'base flv2({} 1 1.0) vgg11 {}(pat2-b 5.0) {}{} hp({})', 'base sl({} 1 1.0) vgg11(4) {}(pat2-b 5.0) {}{} hp({})',
+    'base flv2({} 1 1.0) vgg11 {}(pat2-b 2.0) {}{} hp({})', 'base sl({} 1 1.0) vgg11(4) {}(pat2-b 2.0) {}{} hp({})',
+    'base flv2({} 1 1.0) vgg11 {}(pat2-b 1.0) {}{} hp({})', 'base sl({} 1 1.0) vgg11(4) {}(pat2-b 1.0) {}{} hp({})',]
 
 parser = argparse.ArgumentParser()
-#parser.add_argument('-t', type=int, default=0, help='templates')
 parser.add_argument('-d', type=str, default=0, help='dataset')
 parser.add_argument('-b', type=int, default=10, help='minibatch')
 parser.add_argument('--alg', type=str, default='sgd', help='sgd, adam')
 parser.add_argument('--clients', type=int, default=10, help='number of clients')
-#parser.add_argument('-f', type=str, nargs='*', default='', help='folder')
-#parser.add_argument('--choose', type=str, nargs='*', default=[], help='chooses')
-#parser.add_argument('--ban', type=str, nargs='*', default=[], help='ban')
 args = parser.parse_args()
 print(args)
 
@@ -42,15 +38,14 @@ class HeatMapData():
         self.args = args
         self.dataset = args.d
         self.path = '../save/cmp_lr/{}/'.format(self.dataset)
-        epochs_dict = {'mnist':50, 'fashionmnist':50, 'cifar10':400}
+        epochs_dict = {'mnist':50, 'fashionmnist':50, 'cifar10':400, 'cifar100': 400}
         select_epochs_dict = {50:10, 400:40}
         self.epochs = epochs_dict[self.dataset]
         self.select_epochs = select_epochs_dict[self.epochs]
         if self.dataset == 'mnist' or self.dataset == 'fashionmnist':
             self.temps = mnist_temps
-        elif self.dataset == 'cifar10':
+        elif self.dataset == 'cifar10' or self.dataset == 'cifar100':
             self.temps = cifar10_temps
-            #self.temps = cifar10_temps[t*8:t*8+8]
         self.llr_choice = [1e-5, 5e-5, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
         #self.col_ticks = [1e-5, 5e-5, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
         self.col_ticks = ['f(-5)','5f(-5)','f(-4)','5f(-4)','f(-3)','5f(-3)','f(-2)','5f(-2)','f(-1)']
@@ -63,7 +58,6 @@ class HeatMapData():
                     t = self.temps[i].format(self.args.clients, self.dataset, self.args.alg, '({} 0.9 0.0001)'.format(self.llr_choice[j]), self.args.b)
                 elif self.args.alg == 'adam':
                     t = self.temps[i].format(self.args.clients, self.dataset, self.args.alg, '({} 0.0001)'.format(self.llr_choice[j]), self.args.b)
-                    print(t)
                 if '{}{}'.format(t, '.csv') in self.raw_files:
                     files[i].append(t)
                 else:
@@ -114,16 +108,44 @@ class HeatMapData():
                  'V-10 &{} &5 &{} &{}'.format(self.args.clients, self.args.alg, self.args.b), 
                  'V-10 &{} &2 &{} &{}'.format(self.args.clients, self.args.alg, self.args.b), 
                  'V-10 &{} &1 &{} &{}'.format(self.args.clients, self.args.alg, self.args.b)]
+        elif self.dataset == 'cifar100':
+            a = ['V-100 &{} &IID &{} &{}'.format(self.args.clients, self.args.alg, self.args.b), 
+                 'V-100 &{} &5 &{} &{}'.format(self.args.clients, self.args.alg, self.args.b), 
+                 'V-100 &{} &2 &{} &{}'.format(self.args.clients, self.args.alg, self.args.b), 
+                 'V-100 &{} &1 &{} &{}'.format(self.args.clients, self.args.alg, self.args.b)]
         for i in range(len(self.temps)//2):
             print(a[i], end=' ')
-            max0 = np.argmax(self.data_point_map[2*i+0], axis=0)
-            max1 = np.argmax(self.data_point_map[2*i+1], axis=0)
+            if self.dataset == 'cifar100':
+                min0 = np.where((self.data_point_map[2*i+0]>0.0)&(self.data_point_map[2*i+0]<2.0))[0]
+                min1 = np.where((self.data_point_map[2*i+1]>0.0)&(self.data_point_map[2*i+1]<2.0))[0]
+            else:
+                min0 = np.where((self.data_point_map[2*i+0]>0.0)&(self.data_point_map[2*i+0]<12.0))[0]
+                min1 = np.where((self.data_point_map[2*i+1]>0.0)&(self.data_point_map[2*i+1]<12.0))[0]
+            min0 = 300 if len(min0)==0 else min0[0]
+            min1 = 300 if len(min1)==0 else min1[0]
+            #print(min0, min1)
+
+            best0 = np.argmax(self.data_point_map[2*i+0], axis=0)
+            best1 = np.argmax(self.data_point_map[2*i+1], axis=0)
+            
             #print(max0, max1)
             for j in range(len(self.llr_choice)):
-                format0 = '&\\textcolor{{blue}}{{{:.1f}}}' if j == max0 else '&{:.1f}'
-                format1 = '&\\textcolor{{red}}{{{:.1f}}}' if j == max1 else '&{:.1f}'
-                print(format0.format(self.data_point_map[2*i+0,j]), end=' ') if self.data_point_map[2*i+0,j] != 0.0 else print('&00.0', end=' ')
-                print(format1.format(self.data_point_map[2*i+1,j]), end=' ') if self.data_point_map[2*i+1,j] != 0.0 else print('&00.0', end=' ')
+                # if best0 == min0 here use best0
+                if j == best0:
+                    format0 = '&\\tcb{{{:.1f}}}'
+                elif j == min0:
+                    format0 = '&\\ulb{{{:.1f}}}'
+                else:
+                    format0 = '&{:.1f}'
+                
+                if j == best1:
+                    format1 = '&\\tcr{{{:.1f}}}'
+                elif j == min1:
+                    format1 = '&\\ulr{{{:.1f}}}'
+                else:
+                    format1 = '&{:.1f}'
+                print(format0.format(self.data_point_map[2*i+0,j]), end=' ') if self.data_point_map[2*i+0,j] != 0.0 else print('&-', end=' ')
+                print(format1.format(self.data_point_map[2*i+1,j]), end=' ') if self.data_point_map[2*i+1,j] != 0.0 else print('&-', end=' ')
             print('\\\\')
 
 def gen_heatmap(heatmapdata):
