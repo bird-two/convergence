@@ -1,6 +1,9 @@
 clone/
 data/
+figure/
 save/
 TRACK/
 TRACK.md
 *.png
+*.pyc
+trains/
