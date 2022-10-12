@@ -229,6 +229,11 @@ class DatasetDistributed():
                         net_i = i
                         break
                 # the method modified from function `mnist_noniid` in the sampling.py in [4]
+                # <<< note
+                # we sort the remaining idxs by their label as [4],
+                # But unlike [4], where the shards are selected randomly, 
+                # we select the sequential shards for each net, making the distribution more pathological.
+                # >>>
                 if net_i > 0:
                     remaining_idxs = np.concatenate([idxs_each_class[j][bidx_per_class_list[j]:] for j in range(num_classes)], axis=0)
                     n_shard_remaining_idxs = len(remaining_idxs) // n_sample_per_shard
