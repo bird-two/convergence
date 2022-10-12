@@ -8,7 +8,7 @@ References:
 import torch
 import torch.nn as nn
 
-# bd2 Comment the two lines if you want to run in this file (__name__ == '__main__').
+# note Comment the two lines if you want to run in this file (__name__ == '__main__').
 from .lenet5_mnist import LeNet5
 from .model_utils import BuildClient, BuildServer
 

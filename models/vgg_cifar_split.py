@@ -61,7 +61,7 @@ def vgg11_bn_split(split, dtype, num_classes, **kwargs):
     model = vgg11_bn(dtype=dtype, num_classes=num_classes, **kwargs)
     return splitmodel(model, split)
 
-#bd2 in our experiments, we only use vgg11, so other vgg models are commented to avoid being mixed. 2022 05 02
+#note in our experiments, we only use vgg11, so other vgg models are commented to avoid being mixed. 2022 05 02
 # def vgg13_split(split, dtype, num_classes, **kwargs):
 #     r'''split alexnet
 #     Args:

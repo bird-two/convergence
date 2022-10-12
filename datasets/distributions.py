@@ -81,7 +81,7 @@ class DatasetDistributed():
         net_dataidx_map = self.partition_data(partition, balance, n_nets, alpha)
         # check 
         if check == True:
-            '''bd2 Apendix A
+            '''note Apendix A
             a = [0 for _ in range(0, 20)]
             b = [1 for _ in range(0, 20)]
             c = [2 for _ in range(0, 40)]
@@ -106,7 +106,7 @@ class DatasetDistributed():
             net_dataidx_map (dict {client index: idxs of examples}): {int: np.array (or list)}, e.g. {0: [1,2,3]}
         '''
         print("*********partition data***************")
-        '''bd2 Appendix A
+        '''note Appendix A
         a = [0 for _ in range(0, 20)]
         b = [1 for _ in range(0, 20)]
         c = [2 for _ in range(0, 40)]
@@ -161,7 +161,7 @@ class DatasetDistributed():
             idxs = np.array(range(n_train))    
             idxs_each_class = []
             for k in range(num_classes):
-                #bd2 we add shuffle on the code of [2] to add randomness.
+                #note we add shuffle on the code of [2] to add randomness.
                 # `idx_for_each_class.append(idxs[dataset_label == i])` -> three lines below
                 # 2022 08 05
                 idx_k = idxs[y_train == k]

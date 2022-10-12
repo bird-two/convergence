@@ -115,7 +115,7 @@ def main():
     round_model_server = copy.deepcopy(global_model_server)
     
     for r in range(rounds):
-        #bd2 round_model_client = global_model_client.load_state_dict(global_model_client.state_dict())
+        #note round_model_client = global_model_client.load_state_dict(global_model_client.state_dict())
         # https://github.com/lukemelas/EfficientNet-PyTorch/issues/119
         #2022 08 11
         round_model_client.load_state_dict(global_model_client.state_dict())

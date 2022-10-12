@@ -40,7 +40,7 @@ def dataset_mnist(data_path):
 
 
 def dataset_fashionmnist(data_path):
-    #bd2 mean and std are generated manually
+    #note mean and std are generated manually
     # https://blog.csdn.net/wa1tzy/article/details/106697074
     # 2022 08 17
     transform_train = transforms.Compose([
